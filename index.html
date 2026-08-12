@@ -129,7 +129,8 @@ a:hover { text-decoration-color: var(--accent); color: var(--accent); }
   position: relative;
   max-width: 54rem;
   margin-inline: auto;
-  padding: clamp(2rem, 1rem + 4vw, 4.5rem) var(--gutter) 4rem;
+  /* bottom padding also reserves room for the floating back-to-top button */
+  padding: clamp(2rem, 1rem + 4vw, 4.5rem) var(--gutter) 5.5rem;
 }
 
 /* ---------- theme toggle ---------- */
@@ -157,6 +158,29 @@ a:hover { text-decoration-color: var(--accent); color: var(--accent); }
     right: var(--gutter);
   }
 }
+/* ---------- back to top ---------- */
+/* Parks in the right margin on wide viewports so it never covers the column;
+   falls back to the corner once the margin is too small to hold it. */
+.totop {
+  position: fixed; z-index: 15;
+  bottom: 1.25rem;
+  right: max(1.25rem, calc((100% - 54rem) / 2 - 3.75rem));
+  width: 2.75rem; height: 2.75rem;
+  display: grid; place-items: center;
+  background: var(--ground); color: var(--ink-2);
+  border: 1px solid var(--rule); border-radius: 999px;
+  cursor: pointer;
+  opacity: 0; visibility: hidden; transform: translateY(0.5rem);
+  transition: opacity 160ms ease-out, transform 160ms ease-out,
+              visibility 0s linear 160ms, color 120ms ease-out, border-color 120ms ease-out;
+}
+.totop[data-on="true"] {
+  opacity: 1; visibility: visible; transform: none;
+  transition-delay: 0s;
+}
+.totop:hover { color: var(--ink); border-color: var(--rule-2); }
+.totop svg { width: 16px; height: 16px; }
+
 .theme .moon { display: none; }
 :root[data-theme="dark"] .theme .moon { display: block; }
 :root[data-theme="dark"] .theme .sun  { display: none; }
@@ -420,7 +444,7 @@ a:hover { text-decoration-color: var(--accent); color: var(--accent); }
 
   body { font-size: 9.6pt; line-height: 1.42; background: #fff; }
   .page { max-width: none; padding: 0; }
-  .theme, .skip { display: none !important; }
+  .theme, .skip, .totop { display: none !important; }
   * { animation: none !important; transition: none !important; }
 
   .section { margin-top: 15pt; break-inside: avoid; }
@@ -465,9 +489,8 @@ a:hover { text-decoration-color: var(--accent); color: var(--accent); }
 
   <header class="identity">
     <div>
-      <p class="eyebrow">Hong Kong &middot; Available for new roles</p>
-      <h1 class="name">Lee Chun Kin <span class="given">&ldquo;Ken&rdquo;</span></h1>
-      <p class="title">Senior Software Engineer &mdash; backend &amp; cloud-native systems</p>
+      <h1 class="name">Lee Chun Kin <span class="given">Ken</span></h1>
+      <p class="title">Senior Software Engineer</p>
     </div>
 
     <p class="lede">
@@ -476,27 +499,10 @@ a:hover { text-decoration-color: var(--accent); color: var(--accent); }
       message-queue integrations and load-tested services.
     </p>
 
-    <dl class="proof">
-      <div>
-        <dt>Millions / month</dt>
-        <dd>Visits served by the GraphQL platform I owned
-          <span class="where">Hong Kong Jockey Club</span></dd>
-      </div>
-      <div>
-        <dt>500,000+</dt>
-        <dd>Merchants reachable through the developer platform I extended
-          <span class="where">SHOPLINE</span></dd>
-      </div>
-      <div>
-        <dt>+10% revenue</dt>
-        <dd>Lift from the subscription system I designed and built
-          <span class="where">SHOPLINE</span></dd>
-      </div>
-    </dl>
-
     <ul class="contact">
       <li><span class="key">Email</span> <a href="mailto:1520.kenlck@gmail.com">1520.kenlck@gmail.com</a></li>
       <li><span class="key">GitHub</span> <a href="https://github.com/ken1520">github.com/ken1520</a></li>
+      <li><span class="key">LinkedIn</span> <a href="https://www.linkedin.com/in/ken-lee-625511168/">ken-lee</a></li>
       <li><span class="key">Based</span> Hong Kong</li>
       <li><span class="key">Languages</span> Cantonese &middot; English &middot; Mandarin</li>
     </ul>
@@ -671,6 +677,13 @@ a:hover { text-decoration-color: var(--accent); color: var(--accent); }
     <span><a href="mailto:1520.kenlck@gmail.com">1520.kenlck@gmail.com</a></span>
   </footer>
 
+  <button class="totop" type="button" id="topBtn" data-on="false" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 19V5M5 12l7-7 7 7"></path>
+    </svg>
+  </button>
+
 </div>
 
 <script>
@@ -703,6 +716,30 @@ a:hover { text-decoration-color: var(--accent); color: var(--accent); }
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", sync);
 
   sync();
+})();
+
+(function () {
+  var top = document.getElementById("topBtn");
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  var queued = false;
+
+  // show once the header is well out of view, so it never appears on a short scroll
+  function update() {
+    queued = false;
+    top.setAttribute("data-on", String(window.scrollY > window.innerHeight * 0.6));
+  }
+  function onScroll() {
+    if (!queued) { queued = true; requestAnimationFrame(update); }
+  }
+
+  top.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: reduced.matches ? "auto" : "smooth" });
+  });
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+
+  update();
 })();
 </script>
 
